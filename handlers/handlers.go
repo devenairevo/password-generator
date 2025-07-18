@@ -3,67 +3,17 @@ package handlers
 import (
 	"html/template"
 	"net/http"
+	"passwordGenerator/internal/forms"
 	"passwordGenerator/internal/password"
+	"path/filepath"
 	"strconv"
 )
 
-var tmpl = template.Must(template.New("form").Parse(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Password Generator</title>
-</head>
-<body>
-	<center>
-		<h1>Password Generator</h1>
-		<form method="POST">
-			<label>
-				Length:
-				<input type="number" name="length" min="1" max="40" value="{{.Length}}" required>
-			</label>
-			<br>
-			<label>
-				<input type="checkbox" name="digits" {{if .Digits}}checked{{end}}>
-				Include digits
-			</label>
-			<br>
-			<label>
-				<input type="checkbox" name="lowercase" {{if .Lowercase}}checked{{end}}>
-				Include lowercase
-			</label>
-			<br>
-			<label>
-				<input type="checkbox" name="uppercase" {{if .Uppercase}}checked{{end}}>
-				Include uppercase
-			</label>
-			<br>
-			<button type="submit">Generate</button>
-		</form>
-		{{if .Password}}
-		<div class="result">Generated password: <b>{{.Password}}</b></div>
-		{{end}}
-		{{if .Error}}
-		<div class="result" style="color: #a22;">Error: {{.Error}}</div>
-		{{end}}
-	</center>
-</body>
-</html>
-`))
-
-type Form struct {
-	Length    int
-	Digits    bool
-	Lowercase bool
-	Uppercase bool
-	Password  string
-	Error     string
-}
+var tmpl = template.Must(template.ParseFiles(filepath.Join("templates", "form.html")))
 
 func PasswordHandler(w http.ResponseWriter, r *http.Request) {
 
-	// By default set
-	data := Form{
+	data := forms.PasswordForm{
 		Length:    8,
 		Digits:    true,
 		Lowercase: true,
