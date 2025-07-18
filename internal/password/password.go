@@ -1,8 +1,9 @@
 package password
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand/v2"
+	"math/big"
 )
 
 type Generator interface {
@@ -10,20 +11,20 @@ type Generator interface {
 }
 
 type Password struct {
-	length        int
-	useDigits     bool
-	useLowercase  bool
-	useUppercase  bool
-	usedPasswords map[string]bool
+	length       int
+	useDigits    bool
+	useLowercase bool
+	useUppercase bool
+	uniqueChars  bool
 }
 
-func New(length int, useDigits, useLowercase, useUppercase bool) *Password {
+func New(length int, useDigits, useLowercase, useUppercase bool, uniqueChars bool) *Password {
 	return &Password{
-		length:        length,
-		useDigits:     useDigits,
-		useLowercase:  useLowercase,
-		useUppercase:  useUppercase,
-		usedPasswords: make(map[string]bool),
+		length:       length,
+		useDigits:    useDigits,
+		useLowercase: useLowercase,
+		useUppercase: useUppercase,
+		uniqueChars:  uniqueChars,
 	}
 }
 
@@ -34,8 +35,11 @@ var (
 )
 
 func (p *Password) Generate() (string, error) {
-	if p.length <= 0 {
-		return "", fmt.Errorf("lenth must be positive")
+	if p.length < 4 || p.length > 40 {
+		return "", fmt.Errorf("length must be between 4 and 40")
+	}
+	if !p.useDigits && !p.useLowercase && !p.useUppercase {
+		return "", fmt.Errorf("select at least one character type")
 	}
 
 	var charPool []rune
@@ -49,31 +53,78 @@ func (p *Password) Generate() (string, error) {
 		charPool = append(charPool, uppercase...)
 	}
 
-	result := make([]rune, p.length)
-	for i := 0; i < p.length; i++ {
-		result[i] = charPool[rand.IntN(len(charPool))]
+	if p.uniqueChars && p.length > len(charPool) {
+		return "", fmt.Errorf("can't generate password: length is greater than the number of unique characters")
 	}
 
+	if p.uniqueChars {
+
+		for attempt := 0; attempt < 10; attempt++ {
+			shuffled := make([]rune, len(charPool))
+			copy(shuffled, charPool)
+			cryptoShuffle(shuffled)
+			candidate := shuffled[:p.length]
+
+			hasDigit := !p.useDigits
+			hasLower := !p.useLowercase
+			hasUpper := !p.useUppercase
+			for _, c := range candidate {
+				if !hasDigit && containsRune(digits, c) {
+					hasDigit = true
+				}
+				if !hasLower && containsRune(lowercase, c) {
+					hasLower = true
+				}
+				if !hasUpper && containsRune(uppercase, c) {
+					hasUpper = true
+				}
+			}
+			if hasDigit && hasLower && hasUpper {
+				return string(candidate), nil
+			}
+		}
+		return "", fmt.Errorf("failed to generate password with unique characters and all selected types")
+	}
+
+	result := make([]rune, p.length)
+
+	types := [][]rune{}
 	if p.useDigits {
-		result[rand.IntN(p.length)] = digits[rand.IntN(len(digits))]
+		types = append(types, digits)
 	}
 	if p.useLowercase {
-		result[rand.IntN(p.length)] = lowercase[rand.IntN(len(lowercase))]
+		types = append(types, lowercase)
 	}
 	if p.useUppercase {
-		result[rand.IntN(p.length)] = uppercase[rand.IntN(len(uppercase))]
+		types = append(types, uppercase)
 	}
-
-	rand.Shuffle(len(result), func(i, j int) {
-		result[i], result[j] = result[j], result[i]
-	})
-
-	password := string(result)
-
-	if p.usedPasswords[password] {
-		return p.Generate()
+	for i, t := range types {
+		idx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(t))))
+		result[i] = t[idx.Int64()]
 	}
+	start := len(types)
+	for i := start; i < p.length; i++ {
+		idx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charPool))))
+		result[i] = charPool[idx.Int64()]
+	}
+	cryptoShuffle(result)
+	return string(result), nil
+}
 
-	p.usedPasswords[password] = true
-	return password, nil
+func cryptoShuffle(runes []rune) {
+	n := len(runes)
+	for i := n - 1; i > 0; i-- {
+		jBig, _ := rand.Int(rand.Reader, big.NewInt(int64(i+1)))
+		j := int(jBig.Int64())
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+}
+
+func containsRune(pool []rune, r rune) bool {
+	for _, c := range pool {
+		if c == r {
+			return true
+		}
+	}
+	return false
 }

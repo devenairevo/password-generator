@@ -3,27 +3,41 @@ package handlers
 import (
 	"html/template"
 	"net/http"
-	"passwordGenerator/internal/forms"
-	"passwordGenerator/internal/password"
 	"path/filepath"
 	"strconv"
+
+	"passwordGenerator/internal/forms"
+	"passwordGenerator/internal/password"
 )
 
-var tmpl = template.Must(template.ParseFiles(filepath.Join("templates", "form.html")))
+type Handler struct {
+	tmpl *template.Template
+}
 
-func PasswordHandler(w http.ResponseWriter, r *http.Request) {
+func NewHandler() (*Handler, error) {
+	t, err := template.ParseFiles(filepath.Join("templates", "form.html"))
+	if err != nil {
+		return nil, err
+	}
+	return &Handler{tmpl: t}, nil
+}
 
+func (h *Handler) PasswordHandler(w http.ResponseWriter, r *http.Request) {
 	data := forms.PasswordForm{
 		Length:    8,
 		Digits:    true,
 		Lowercase: true,
 		Uppercase: true,
 	}
+
 	if r.Method == http.MethodPost {
 		err := r.ParseForm()
 		if err != nil {
+			data.Error = "Ошибка разбора формы"
+			h.tmpl.Execute(w, data)
 			return
 		}
+
 		length, _ := strconv.Atoi(r.FormValue("length"))
 		digits := r.FormValue("digits") == "on"
 		lowercase := r.FormValue("lowercase") == "on"
@@ -34,7 +48,7 @@ func PasswordHandler(w http.ResponseWriter, r *http.Request) {
 		data.Lowercase = lowercase
 		data.Uppercase = uppercase
 
-		var generator password.Generator = password.New(length, digits, lowercase, uppercase)
+		var generator password.Generator = password.New(length, digits, lowercase, uppercase, true)
 		generatedPassword, err := generator.Generate()
 		if err != nil {
 			data.Error = err.Error()
@@ -42,8 +56,9 @@ func PasswordHandler(w http.ResponseWriter, r *http.Request) {
 			data.Password = generatedPassword
 		}
 	}
-	err := tmpl.Execute(w, data)
+
+	err := h.tmpl.Execute(w, data)
 	if err != nil {
-		return
+		http.Error(w, "Template execution error", http.StatusInternalServerError)
 	}
 }

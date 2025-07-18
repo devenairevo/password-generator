@@ -3,39 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <title>Password Generator</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-	<center>
-		<h1>Password Generator</h1>
-		<form method="POST">
-			<label>
-				Length:
-				<input type="number" name="length" min="1" max="40" value="{{.Length}}" required>
-			</label>
-			<br>
-			<label>
-				<input type="checkbox" name="digits" {{if .Digits}}checked{{end}}>
-				Include digits
-			</label>
-			<br>
-			<label>
-				<input type="checkbox" name="lowercase" {{if .Lowercase}}checked{{end}}>
-				Include lowercase
-			</label>
-			<br>
-			<label>
-				<input type="checkbox" name="uppercase" {{if .Uppercase}}checked{{end}}>
-				Include uppercase
-			</label>
-			<br>
-			<button type="submit">Generate</button>
-		</form>
-		{{if .Password}}
-		<div class="result">Generated password: <b>{{.Password}}</b></div>
-		{{end}}
-		{{if .Error}}
-		<div class="result" style="color: #a22;">Error: {{.Error}}</div>
-		{{end}}
-	</center>
+    <div class="container">
+        <h1>Password Generator</h1>
+        <form method="POST">
+            <label>
+                Length:
+                <input type="number" name="length" min="4" max="40" value="{{.Length}}" required>
+            </label>
+            <label>
+                <input type="checkbox" name="digits" {{if .Digits}}checked{{end}}>
+                Include digits
+            </label>
+            <label>
+                <input type="checkbox" name="lowercase" {{if .Lowercase}}checked{{end}}>
+                Include lowercase
+            </label>
+            <label>
+                <input type="checkbox" name="uppercase" {{if .Uppercase}}checked{{end}}>
+                Include uppercase
+            </label>
+            <button type="submit">Generate</button>
+        </form>
+        {{if .Password}}
+        <div class="result">Generated password: <b>{{.Password}}</b></div>
+        {{end}}
+        {{if .Error}}
+        <div class="error">{{.Error}}</div>
+        {{end}}
+    </div>
 </body>
 </html> 

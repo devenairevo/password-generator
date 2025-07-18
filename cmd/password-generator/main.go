@@ -14,6 +14,10 @@ import (
 )
 
 func main() {
+	h, err := handlers.NewHandler()
+	if err != nil {
+		log.Fatalf("Ошибка загрузки шаблона: %v", err)
+	}
 
 	router := http.NewServeMux()
 
@@ -22,8 +26,8 @@ func main() {
 		Handler: middleware.LoggingMiddleware(router),
 	}
 
-	// Requests
-	router.HandleFunc("/", handlers.PasswordHandler)
+	router.HandleFunc("/", h.PasswordHandler)
+	router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
