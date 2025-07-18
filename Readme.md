@@ -1,6 +1,7 @@
 # Password Generator
 
 A simple Go web application for generating passwords, options (length, digits, lowercase, uppercase).
+![Password Generator Screenshot](assets/screenshot1.png)
 
 ## Running Locally
 
