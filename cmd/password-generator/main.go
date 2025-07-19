@@ -16,7 +16,7 @@ import (
 func main() {
 	h, err := handlers.NewHandler()
 	if err != nil {
-		log.Fatalf("Ошибка загрузки шаблона: %v", err)
+		log.Fatalf("Error with loading template: %v", err)
 	}
 
 	router := http.NewServeMux()

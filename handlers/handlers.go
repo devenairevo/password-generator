@@ -33,8 +33,11 @@ func (h *Handler) PasswordHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		err := r.ParseForm()
 		if err != nil {
-			data.Error = "Ошибка разбора формы"
-			h.tmpl.Execute(w, data)
+			data.Error = "Error with parsing form"
+			err := h.tmpl.Execute(w, data)
+			if err != nil {
+				return
+			}
 			return
 		}
 
